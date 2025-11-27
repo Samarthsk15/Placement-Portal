@@ -1,0 +1,1426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Placement Admin Dashboard</title>
+  <link rel="stylesheet" href="styles.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script>
+    if (window['pdfjsLib']) {
+      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    }
+  </script>
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <div class="brand">
+        <div class="brand-logo" aria-hidden="true"></div>
+        <div class="brand-title">Placement Dashboard</div>
+      </div>
+      <div class="header-actions">
+        <a href="index.html" id="logout">Logout</a>
+      </div>
+    </header>
+
+    <nav class="nav" aria-label="Primary">
+      <button class="tab" id="tab-admin" type="button">Admin</button>
+      <button class="tab" id="tab-students" type="button">Student Registration</button>
+      <button class="tab" id="tab-analyzer" type="button">AI Resume Analyzer</button>
+      <button class="tab" id="tab-placement" type="button">Placement</button>
+      <button class="tab" id="tab-marks" type="button">Marks Calculation</button>
+    </nav>
+
+    <div style="display: grid; grid-template-columns: 1fr; gap: 20px;">
+      <section class="card hidden" id="panel-admin" aria-labelledby="admin-entity" style="max-width: 720px; margin: 0 auto;">
+        <h2 id="admin-entity">Admin</h2>
+        <p class="muted">Only the designated admin can login to manage departments and view students.</p>
+
+        <div id="admin-login">
+          <form class="form" id="admin-form">
+            <div class="field">
+              <label for="admin-email">Admin Email</label>
+              <input id="admin-email" type="email" placeholder="admin@example.com" required />
+            </div>
+            <div class="field">
+              <label for="admin-password">Admin Password</label>
+              <input id="admin-password" type="password" placeholder="••••••••" required />
+            </div>
+            <div class="actions">
+              <button class="button" type="submit">Login as Admin</button>
+            </div>
+          </form>
+        </div>
+
+        <div id="admin-panel" class="hidden">
+          <div class="actions" style="justify-content:center; gap:10px; margin-bottom:12px;">
+            <button class="button" id="btn-admin-students" type="button">Student Info</button>
+            <button class="button secondary" id="btn-admin-companies" type="button">Company Info</button>
+          </div>
+
+          <div id="admin-student-info">
+          <div class="entity">
+            <details class="entity-item" open>
+              <summary>
+                <span>Departments</span>
+                <span class="chevron">▶</span>
+              </summary>
+              <div class="entity-children" id="departments-list">
+                <!-- Departments populated by script -->
+              </div>
+            </details>
+          </div>
+
+          <div class="card" style="margin-top:12px;">
+            <h3>Year</h3>
+            <div class="entity-children">
+              <div id="selected-dept-box" class="badge">Department: -</div>
+              <div id="selected-year-box" class="badge" style="background: #6b7280; color: white; margin-top: 5px; display: none;">Year: -</div>
+              <div class="actions" style="justify-content:center; gap:10px;">
+                <button class="button secondary" id="cal-year" type="button" aria-label="Select Year">Select Year</button>
+              </div>
+              <div id="calendar-pickers" class="entity-children">
+                <div id="year-picker" class="hidden" style="max-height:260px; overflow-y:auto; display:block;"></div>
+              </div>
+              <div class="muted">Select a department, then choose a year to view students.</div>
+            </div>
+          </div>
+
+          <div class="card" style="margin-top:12px;">
+            <h3>Registered Students 
+              <span id="student-count-badge" class="badge" style="background: #3b82f6; color: white; margin-left: 8px; display: none;">0</span>
+            </h3>
+            <div class="actions" id="share-actions" style="gap:8px; align-items:center; display:none;">
+              <input id="share-link-input" type="text" placeholder="Paste/share link for selected..." style="flex:1; min-width: 220px;" />
+              <button class="button" id="send-mailto-btn" type="button" title="Open your mail app to send to selected">Send</button>
+            </div>
+            <div id="students-list" class="entity-children">
+              <div class="muted">Select a batch to view students.</div>
+            </div>
+          </div>
+
+          <div class="card" style="margin-top:12px;">
+            <h3>Student Details</h3>
+            <div id="student-details" class="entity-children">
+              <div class="muted">Click a student name to view skills and domain.</div>
+            </div>
+          </div>
+          </div> <!-- /#admin-student-info -->
+
+          <div id="admin-company-info" class="hidden">
+            <div class="card">
+              <h3>Add Company & Schedule</h3>
+              <form class="form" id="company-form">
+                <div class="grid-2">
+                  <div class="field"><label>Company Name</label><input id="comp-name" type="text" required /></div>
+                  <div class="field"><label>Role</label><input id="comp-role" type="text" /></div>
+                </div>
+                <div class="grid-2">
+                  <div class="field"><label>Location</label><input id="comp-location" type="text" /></div>
+                  <div class="field"><label>Package (CTC)</label><input id="comp-package" type="text" /></div>
+                </div>
+                <div class="grid-2">
+                  <div class="field"><label>Schedule Date</label><input id="comp-date" type="date" /></div>
+                  <div class="field"><label>Eligibility</label><input id="comp-eligibility" type="text" placeholder="e.g., CGPA>=7" /></div>
+                </div>
+                <div class="field"><label>Notes</label><textarea id="comp-notes" rows="3" placeholder="Any additional info..."></textarea></div>
+                <div class="actions"><button class="button" type="submit">Save Company</button></div>
+              </form>
+            </div>
+            <div class="card" style="margin-top:12px;">
+              <h3>Company List</h3>
+              <div id="company-list" class="entity-children"><div class="muted">No companies yet.</div></div>
+            </div>
+          </div>
+
+          <div id="admin-candidate-search" class="hidden" style="display:none;">
+            <div class="card">
+              <h3>Search Candidates</h3>
+              <form class="form" id="search-form">
+                <div class="grid-2">
+                  <div class="field"><label>Skills contains</label><input id="search-skills" type="text" placeholder="e.g., java, react" /></div>
+                  <div class="field"><label>Domain contains</label><input id="search-domain" type="text" placeholder="e.g., web" /></div>
+                </div>
+                <div class="actions"><button class="button" type="submit">Search</button></div>
+              </form>
+            </div>
+            <div class="card" style="margin-top:12px;">
+              <h3>Results</h3>
+            <div id="search-results" class="entity-children"><div class="muted">Enter a skill or domain to search.</div></div>
+            <div id="search-details" class="entity-children" style="margin-top:10px;"><div class="muted">Select a candidate to view details.</div></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card hidden" id="panel-students" aria-labelledby="student-reg" style="max-width: 720px; margin: 0 auto;">
+        <h2 id="student-reg">Student Registration</h2>
+        <p class="muted">Register students for the placement process.</p>
+        <form class="form" id="student-form">
+          <div class="grid-2">
+            <div class="field">
+              <label for="student-firstname">First Name</label>
+              <input id="student-firstname" type="text" placeholder="First name" required />
+            </div>
+            <div class="field">
+              <label for="student-lastname">Last Name</label>
+              <input id="student-lastname" type="text" placeholder="Last name" required />
+            </div>
+          </div>
+          
+          <div class="grid-2">
+            <div class="field">
+              <label for="student-usn">Student USN</label>
+              <input id="student-usn" type="text" placeholder="e.g., 1SG20CS001" required />
+            </div>
+            <div class="field">
+              <label for="student-gender">Gender</label>
+              <select id="student-gender" required>
+                <option value="">Select gender</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="grid-2">
+            <div class="field">
+              <label for="student-dept">Department</label>
+              <select id="student-dept" required>
+                <option value="">Select department</option>
+                <option>CSE</option>
+                <option>ECE</option>
+                <option>EEE</option>
+                <option>MECH</option>
+                <option>CIVIL</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="student-batch">Batch (Year)</label>
+              <select id="student-batch" required>
+                <option value="">Select batch</option>
+                <option>2018</option>
+                <option>2019</option>
+                <option>2020</option>
+                <option>2021</option>
+                <option>2022</option>
+                <option>2023</option>
+                <option>2024</option>
+                <option>2025</option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="grid-2">
+            <div class="field">
+              <label for="student-email">Email</label>
+              <input id="student-email" type="email" placeholder="student@example.com" required />
+            </div>
+            <div class="field">
+              <label for="student-phone">Phone Number</label>
+              <input id="student-phone" type="tel" placeholder="+91 9876543210" required />
+            </div>
+          </div>
+          
+          <div class="field">
+            <label for="student-domain">Domain</label>
+            <input id="student-domain" type="text" placeholder="e.g., Web Development" required />
+          </div>
+          
+          <div class="field">
+            <label for="student-skills">Skills (comma-separated)</label>
+            <textarea id="student-skills" rows="3" placeholder="e.g., Java, Python, SQL" required></textarea>
+          </div>
+          
+          <div class="field">
+            <label for="student-resume">Resume (PDF)</label>
+            <input id="student-resume" type="file" accept="application/pdf,.pdf" />
+          </div>
+          
+          <div class="actions">
+            <button class="button" type="submit">Register Student</button>
+            <button class="button secondary" type="reset">Reset</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="card hidden" id="panel-analyzer" aria-labelledby="analyzer-title" style="max-width: 900px; margin: 0 auto;">
+        <h2 id="analyzer-title">AI Resume Analyzer</h2>
+        <p class="muted">Upload a PDF resume to get suggestions: grammar, missing skills, strengths.</p>
+        <form class="form" id="analyzer-form">
+          <div class="field">
+            <label for="resume-domain">Target Domain</label>
+            <select id="resume-domain" required>
+              <option value="">Select domain</option>
+              <option value="web">Web Development</option>
+              <option value="data">Data/ML</option>
+              <option value="embedded">Embedded/IoT</option>
+              <option value="systems">Systems/DevOps</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="resume-file">Resume File (.pdf)</label>
+            <input id="resume-file" type="file" accept="application/pdf,.pdf" required />
+          </div>
+          <div class="actions">
+            <button class="button" type="submit">Analyze</button>
+            <button class="button secondary" type="reset">Clear</button>
+          </div>
+        </form>
+        <div class="grid-2" style="margin-top:12px;">
+          <div class="card">
+            <h3>Grammar & Clarity</h3>
+            <ul id="analysis-grammar" class="entity-children"><li class="muted">No analysis yet.</li></ul>
+          </div>
+          <div class="card">
+            <h3>Missing Skills</h3>
+            <ul id="analysis-missing" class="entity-children"><li class="muted">No analysis yet.</li></ul>
+          </div>
+        </div>
+        <div class="card" style="margin-top:12px;">
+          <h3>Strength Highlights</h3>
+          <ul id="analysis-strengths" class="entity-children"><li class="muted">No analysis yet.</li></ul>
+        </div>
+      </section>
+
+      <section class="card hidden" id="panel-placement" aria-labelledby="placement-title" style="max-width: 900px; margin: 0 auto;">
+        <h2 id="placement-title">Placement</h2>
+        <div class="actions" style="justify-content:center; gap:10px; margin-bottom:12px;">
+          <button class="button" id="btn-place-companies" type="button">Companies</button>
+          <button class="button secondary" id="btn-place-prep" type="button">Preparation</button>
+        </div>
+        <div id="placement-companies">
+          <div class="card">
+            <h3>Companies (from Admin Portal)</h3>
+            <div id="placement-company-list" class="entity-children"><div class="muted">No companies yet.</div></div>
+          </div>
+        </div>
+        <div id="placement-preparation" class="hidden">
+          <div class="card">
+            <h3>Preparation Links & Advice</h3>
+            <div class="entity-children" id="prep-links">
+              <details class="entity-item" open>
+                <summary><span>General Aptitude</span><span class="chevron">▶</span></summary>
+                <div class="entity-children">
+                  <ul>
+                    <li><a href="https://www.prepinsta.com/aptitude/" target="_blank" rel="noopener">Aptitude practice</a></li>
+                    <li><a href="https://www.youtube.com/@takshz-aptitude" target="_blank" rel="noopener">Aptitude playlist</a></li>
+                  </ul>
+                </div>
+              </details>
+              <details class="entity-item">
+                <summary><span>DSA / Coding</span><span class="chevron">▶</span></summary>
+                <div class="entity-children">
+                  <ul>
+                    <li><a href="https://practice.geeksforgeeks.org/explore" target="_blank" rel="noopener">GeeksForGeeks practice</a></li>
+                    <li><a href="https://leetcode.com/explore/" target="_blank" rel="noopener">LeetCode explore</a></li>
+                  </ul>
+                </div>
+              </details>
+              <details class="entity-item">
+                <summary><span>Interview Prep</span><span class="chevron">▶</span></summary>
+                <div class="entity-children">
+                  <ul>
+                    <li><a href="https://roadmap.sh/" target="_blank" rel="noopener">Tech roadmaps</a></li>
+                    <li><a href="https://www.interviewbit.com/behavioral-interview-questions/" target="_blank" rel="noopener">Behavioral questions</a></li>
+                  </ul>
+                </div>
+              </details>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card hidden" id="panel-marks" aria-labelledby="marks-title" style="max-width: 900px; margin: 0 auto;">
+        <h2 id="marks-title">Marks Calculation</h2>
+        <p class="muted">Enter subjects, marks (out of 100), and credits to calculate SGPA. Save SGPA per semester to compute CGPA.</p>
+        <form class="form" id="sgpa-form">
+          <div class="entity-children" id="subjects-list">
+            <div class="subject-row">
+              <div class="grid-2">
+                <div class="field"><label>Subject Name</label><input class="sub-name" type="text" placeholder="Subject" required /></div>
+                <div class="field"><label>Marks (0-100)</label><input class="sub-marks" type="number" min="0" max="100" placeholder="Marks" required /></div>
+              </div>
+              <div class="grid-2">
+                <div class="field"><label>Credits</label><input class="sub-credits" type="number" min="1" max="6" placeholder="Credits" required /></div>
+                <div class="field"><label>Grade (auto)</label><input class="sub-grade" type="text" placeholder="A/B/C..." disabled /></div>
+              </div>
+            </div>
+          </div>
+          <div class="actions">
+            <button class="button" type="button" id="add-subject">Add Subject</button>
+            <button class="button" type="submit">Calculate SGPA</button>
+          </div>
+        </form>
+        <div class="card" style="margin-top:12px;">
+          <h3>SGPA Result</h3>
+          <div id="sgpa-result" class="entity-children"><div class="muted">No calculation yet.</div></div>
+          <div class="actions" style="margin-top:8px;">
+            <button class="button" type="button" id="save-sgpa">Save SGPA to CGPA</button>
+          </div>
+        </div>
+        <div class="card" style="margin-top:12px;">
+          <h3>CGPA</h3>
+          <div id="cgpa-result" class="entity-children"><div class="muted">No semesters saved.</div></div>
+          <div class="actions" style="margin-top:8px;">
+            <button class="button secondary" type="button" id="clear-cgpa">Clear Saved Semesters</button>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <footer class="footer">© 2025 Placement Portal. Demo only.</footer>
+  </div>
+
+  <script>
+    (function() {
+      const SESSION_KEY = 'pp_current_user_email';
+      const CGPA_KEY = 'pp_cgpa_semesters';
+      const _origin = (window.location && window.location.origin) || '';
+      const _isHttp = _origin.startsWith('http://') || _origin.startsWith('https://');
+      const API_BASE_URL = (_isHttp ? _origin : 'http://localhost:3000') + '/api';
+
+      // Hardcoded admin credentials
+      const ADMIN_EMAIL = 'srkadalagi@gmail.com';
+      const ADMIN_PASSWORD = 'srushti2003154';
+
+      function getSession() { return localStorage.getItem(SESSION_KEY); }
+      
+      // API functions
+      async function apiRequest(endpoint, options = {}) {
+        try {
+          const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+            headers: {
+              'Content-Type': 'application/json',
+              ...options.headers
+            },
+            ...options
+          });
+          const ct = response.headers.get('content-type') || '';
+          if (!response.ok) {
+            let message = `API request failed (${response.status})`;
+            try {
+              if (ct.includes('application/json')) {
+                const errJson = await response.json();
+                message = errJson.error || message;
+              } else {
+                const text = await response.text();
+                message = text && text.slice(0, 300);
+              }
+            } catch {}
+            throw new Error(message);
+          }
+          if (ct.includes('application/json')) {
+            return await response.json();
+          }
+          // Fallback for unexpected non-JSON success responses
+          return await response.text();
+        } catch (error) {
+          console.error('API Error:', error);
+          throw error;
+        }
+      }
+
+      async function getStudents() {
+        try {
+          const data = await apiRequest('/students');
+          return data;
+        } catch (error) {
+          console.error('Failed to fetch students:', error);
+          return [];
+        }
+      }
+
+      // Keep an index of students currently rendered in the list by id -> student
+      let currentStudentsById = {};
+
+      // Share actions (copy recipients/message)
+      function setShareActionsVisible(visible) {
+        var el = document.getElementById('share-actions');
+        if (el) el.style.display = visible ? 'flex' : 'none';
+      }
+
+      async function deleteStudentRequest(id) {
+        return await apiRequest(`/students/${id}`, { method: 'DELETE' });
+      }
+
+      async function saveStudentForm(formEl) {
+        const formData = new FormData(formEl);
+        const resp = await fetch(`${API_BASE_URL}/students`, {
+          method: 'POST',
+          body: formData
+        });
+        if (!resp.ok) {
+          let msg = 'Failed to save student';
+          try { const j = await resp.json(); msg = j.error || msg; } catch {}
+          throw new Error(msg);
+        }
+        return await resp.json();
+      }
+
+      async function getStudentsByDeptBatch(department, batch) {
+        try {
+          const data = await apiRequest(`/students/department/${department}/batch/${batch}`);
+          return data;
+        } catch (error) {
+          console.error('Failed to fetch students by dept/batch:', error);
+          return [];
+        }
+      }
+
+      async function getCompanies() {
+        try { return await apiRequest('/companies'); } catch { return []; }
+      }
+      async function createCompany(payload) {
+        return await apiRequest('/companies', { method: 'POST', body: JSON.stringify(payload) });
+      }
+
+      async function searchCandidates(skills, domain) {
+        const params = new URLSearchParams();
+        if (skills) params.set('skills', skills);
+        if (domain) params.set('domain', domain);
+        try { return await apiRequest('/students/search?' + params.toString()); } catch { return []; }
+      }
+
+      // Tabs
+      const tabAdmin = document.getElementById('tab-admin');
+      const tabStudents = document.getElementById('tab-students');
+      const tabAnalyzer = document.getElementById('tab-analyzer');
+      const tabPlacement = document.getElementById('tab-placement');
+      const tabMarks = document.getElementById('tab-marks');
+
+      const panelAdmin = document.getElementById('panel-admin');
+      const panelStudents = document.getElementById('panel-students');
+      const panelAnalyzer = document.getElementById('panel-analyzer');
+      const panelPlacement = document.getElementById('panel-placement');
+      const panelMarks = document.getElementById('panel-marks');
+
+      function selectTab(tab) {
+        const isAdminTab = tab === 'admin';
+        const isStudents = tab === 'students';
+        const isAnalyzer = tab === 'analyzer';
+        const isPlacement = tab === 'placement';
+        const isMarks = tab === 'marks';
+        tabAdmin.classList.toggle('active', isAdminTab);
+        tabStudents.classList.toggle('active', isStudents);
+        tabAnalyzer.classList.toggle('active', isAnalyzer);
+        tabPlacement.classList.toggle('active', isPlacement);
+        tabMarks.classList.toggle('active', isMarks);
+        panelAdmin.classList.toggle('hidden', !isAdminTab);
+        panelStudents.classList.toggle('hidden', !isStudents);
+        panelAnalyzer.classList.toggle('hidden', !isAnalyzer);
+        panelPlacement.classList.toggle('hidden', !isPlacement);
+        panelMarks.classList.toggle('hidden', !isMarks);
+      }
+
+      tabAdmin.addEventListener('click', function() { selectTab('admin'); });
+      tabStudents.addEventListener('click', function() { selectTab('students'); });
+      tabAnalyzer.addEventListener('click', function() { selectTab('analyzer'); });
+      tabPlacement.addEventListener('click', function() { selectTab('placement'); });
+      tabMarks.addEventListener('click', function() { selectTab('marks'); });
+
+      // Require a user session for dashboard
+      if (!getSession()) {
+        alert('Please login first.');
+        window.location.href = 'index.html';
+        return;
+      }
+
+      // Admin login elements
+      const adminLoginEl = document.getElementById('admin-login');
+      const adminPanelEl = document.getElementById('admin-panel');
+
+      // Validate strictly against hardcoded admin credentials
+      document.getElementById('admin-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const email = document.getElementById('admin-email').value.trim().toLowerCase();
+        const password = document.getElementById('admin-password').value;
+        if (email !== ADMIN_EMAIL || password !== ADMIN_PASSWORD) {
+          alert('Invalid admin credentials');
+          return;
+        }
+        adminLoginEl.classList.add('hidden');
+        adminPanelEl.classList.remove('hidden');
+        buildDepartments();
+      });
+
+      // Departments (static)
+      const departments = ['CSE', 'ECE', 'EEE', 'MECH', 'CIVIL'];
+      let calendarState = { selectedDept: null, currentDate: new Date() };
+
+      function buildDepartments() {
+        const container = document.getElementById('departments-list');
+        container.innerHTML = '';
+        departments.forEach(function(dept) {
+          const btn = document.createElement('button');
+          btn.className = 'button secondary';
+          btn.type = 'button';
+          btn.textContent = dept;
+          btn.addEventListener('click', function() { selectDepartment(dept, btn); });
+          container.appendChild(btn);
+        });
+      }
+
+      function selectDepartment(dept, btnEl) {
+        calendarState.selectedDept = dept;
+        // Highlight selected department
+        document.querySelectorAll('#departments-list .button').forEach(function(b){ b.classList.remove('active'); });
+        if (btnEl) btnEl.classList.add('active');
+        const studentsList = document.getElementById('students-list');
+        const details = document.getElementById('student-details');
+        studentsList.innerHTML = '<div class="muted">Choose a year to view students.</div>';
+        details.innerHTML = '<div class="muted">Click a student name to view skills and domain.</div>';
+        // Show selected department name
+        var box = document.getElementById('selected-dept-box');
+        if (box) box.textContent = 'Department: ' + dept;
+        // Auto-open year picker
+        var yearBtn = document.getElementById('cal-year');
+        var yearPicker = document.getElementById('year-picker');
+        if (yearBtn && yearPicker) {
+          yearPicker.classList.remove('hidden');
+          // Ensure pickers are built/bound
+          setupMonthYearPickers();
+        }
+      }
+
+      // No calendar grid now; only year picker controls are used
+
+      function setupMonthYearPickers() {
+        const monthBtn = null; // removed
+        const yearBtn = document.getElementById('cal-year');
+        const monthPicker = { classList: { add: function(){}, remove: function(){}, contains: function(){ return true; } } }; // noop
+        const yearPicker = document.getElementById('year-picker');
+        if (!yearBtn || !yearPicker) return;
+
+        // Build month picker as vertical list (scrolling)
+        // Month picker removed
+
+        // Build year picker as infinite-ish scrolling list
+        if (!yearPicker._built) {
+          const base = new Date().getFullYear();
+          yearPicker._min = base - 20;
+          yearPicker._max = base + 20;
+          function renderYears(min, max, appendToTop) {
+            const frag = document.createDocumentFragment();
+            for (let y = min; y <= max; y++) {
+              const wrap = document.createElement('div');
+              wrap.style.padding = '2px 0';
+              const btn = document.createElement('button');
+              btn.className = 'button secondary';
+              btn.style.width = '100%';
+              btn.textContent = String(y);
+              btn.setAttribute('data-year', String(y));
+              wrap.appendChild(btn);
+              if (appendToTop) {
+                yearPicker.insertBefore(wrap, yearPicker.firstChild);
+              } else {
+                frag.appendChild(wrap);
+              }
+            }
+            if (!appendToTop) yearPicker.appendChild(frag);
+          }
+          renderYears(yearPicker._min, yearPicker._max, false);
+          yearPicker._built = true;
+
+          // Infinite scroll behavior
+          yearPicker.addEventListener('scroll', function() {
+            const nearTop = yearPicker.scrollTop < 30;
+            const nearBottom = (yearPicker.scrollHeight - yearPicker.scrollTop - yearPicker.clientHeight) < 30;
+            if (nearTop) {
+              const newMin = yearPicker._min - 20;
+              renderYears(newMin, yearPicker._min - 1, true);
+              yearPicker._min = newMin;
+              yearPicker.scrollTop += 200; // maintain position roughly
+            } else if (nearBottom) {
+              const newMax = yearPicker._max + 20;
+              renderYears(yearPicker._max + 1, newMax, false);
+              yearPicker._max = newMax;
+            }
+          });
+        }
+
+        // Toggle visibility
+        function hideAll() { yearPicker.classList.add('hidden'); }
+        yearBtn.onclick = function(){
+          const isHidden = yearPicker.classList.contains('hidden');
+          hideAll();
+          if (isHidden) yearPicker.classList.remove('hidden');
+        };
+
+        // Selection handlers
+        // Month click handlers removed
+
+        function bindYearClicks() {
+          yearPicker.querySelectorAll('button[data-year]').forEach(function(btn){
+            if (btn._bound) return;
+            btn._bound = true;
+            btn.onclick = function(){
+              const y = parseInt(btn.getAttribute('data-year'), 10);
+              calendarState.currentDate.setFullYear(y);
+              hideAll();
+              
+              // Update year button text to show selected year
+              const yearBtn = document.getElementById('cal-year');
+              if (yearBtn) {
+                yearBtn.textContent = 'Selected Year: ' + y;
+                yearBtn.style.background = '#10b981';
+                yearBtn.style.color = 'white';
+              }
+              
+              // Update year status box
+              const yearBox = document.getElementById('selected-year-box');
+              if (yearBox) {
+                yearBox.textContent = 'Year: ' + y;
+                yearBox.style.display = 'inline-block';
+                yearBox.style.background = '#10b981';
+              }
+              
+              // Render students for selected department and year
+              if (calendarState.selectedDept) {
+                console.log('Rendering students for:', calendarState.selectedDept, y.toString());
+                renderStudents(calendarState.selectedDept, y.toString());
+              } else {
+                console.log('No department selected');
+              }
+            };
+          });
+        }
+        bindYearClicks();
+        // Rebind on DOM changes when infinite scroll appends
+        const mo = new MutationObserver(function(){ bindYearClicks(); });
+        if (!yearPicker._observing) {
+          mo.observe(yearPicker, { childList: true });
+          yearPicker._observing = true;
+        }
+      }
+
+      async function renderStudents(dept, batch) {
+        const container = document.getElementById('students-list');
+        const details = document.getElementById('student-details');
+        container.innerHTML = '<div class="muted">Loading students for ' + dept + ' - ' + batch + '...</div>';
+        details.innerHTML = '<div class="muted">Click a student name to view skills and domain.</div>';
+        
+        try {
+          console.log('Fetching students for:', dept, batch); // Debug log
+          const students = await getStudentsByDeptBatch(dept, batch);
+          currentStudentsById = {};
+          students.forEach(function(s){ currentStudentsById[String(s.id)] = s; });
+          container.innerHTML = '';
+          details.innerHTML = '<div class="muted">Click a student name to view skills and domain.</div>';
+          
+          if (!students.length) {
+            container.innerHTML = '<div class="muted">No students registered for ' + dept + ' ' + batch + '.</div>';
+            return;
+          }
+          
+          const ul = document.createElement('ul');
+          students.forEach(function(s, index) {
+            const li = document.createElement('li');
+            li.style.display = 'flex';
+            li.style.alignItems = 'center';
+            li.style.gap = '8px';
+            const btn = document.createElement('button');
+            
+            // Add color coding based on department
+            const deptColors = {
+              'CSE': '#3b82f6',    // Blue
+              'ECE': '#10b981',    // Green
+              'EEE': '#f59e0b',    // Amber
+              'MECH': '#ef4444',   // Red
+              'CIVIL': '#8b5cf6'   // Purple
+            };
+            
+            const color = deptColors[s.department] || '#6b7280'; // Default gray
+            btn.className = 'button secondary student-btn';
+            btn.type = 'button';
+            btn.style.borderLeft = `4px solid ${color}`;
+            btn.style.backgroundColor = `${color}15`; // Light background
+            btn.style.color = color;
+            btn.style.fontWeight = '600';
+            btn.style.fontSize = '15px';
+            btn.style.flex = '1';
+            btn.textContent = s.first_name + ' ' + s.last_name + ' (' + s.usn + ')';
+            
+            // Add hover effects
+            btn.addEventListener('mouseenter', function() {
+              this.style.backgroundColor = `${color}25`;
+              this.style.transform = 'translateX(2px)';
+            });
+            
+            btn.addEventListener('mouseleave', function() {
+              this.style.backgroundColor = `${color}15`;
+              this.style.transform = 'translateX(0)';
+            });
+            
+            btn.addEventListener('click', function() { 
+              showStudentDetails(s, btn); 
+            });
+            
+            li.appendChild(btn);
+            // right-side controls (select + delete)
+            const controls = document.createElement('div');
+            controls.style.display = 'flex';
+            controls.style.alignItems = 'center';
+            controls.style.gap = '8px';
+            controls.style.marginLeft = 'auto';
+            const sel = document.createElement('input');
+            sel.type = 'checkbox';
+            sel.className = 'student-select';
+            sel.setAttribute('data-id', String(s.id));
+            sel.setAttribute('data-email', s.email || '');
+            sel.setAttribute('data-name', (s.first_name || '') + ' ' + (s.last_name || ''));
+            sel.style.transform = 'scale(0.9)';
+            controls.appendChild(sel);
+            const del = document.createElement('button');
+            del.className = 'button secondary';
+            del.type = 'button';
+            del.style.background = '#ef4444';
+            del.style.color = 'white';
+            del.style.padding = '4px 8px';
+            del.style.fontSize = '12px';
+            del.textContent = 'Delete';
+            del.addEventListener('click', async function(){
+              if (!confirm('Delete this student?')) return;
+              try {
+                await deleteStudentRequest(s.id);
+                // refresh
+                refreshCurrentStudentView();
+                details.innerHTML = '<div class="muted">Student deleted.</div>';
+              } catch (err) {
+                alert('Failed to delete: ' + (err && err.message ? err.message : 'Unknown error'));
+              }
+            });
+            controls.appendChild(del);
+            li.appendChild(controls);
+            ul.appendChild(li);
+          });
+          container.appendChild(ul);
+          
+          // Update student count badge
+          const countBadge = document.getElementById('student-count-badge');
+          if (countBadge) {
+            countBadge.textContent = students.length;
+            countBadge.style.display = 'inline-block';
+            countBadge.style.background = students.length > 0 ? '#10b981' : '#6b7280';
+          }
+          setShareActionsVisible(true);
+        } catch (error) {
+          container.innerHTML = '<div class="muted">Error loading students. Please try again.</div>';
+          console.error('Error rendering students:', error);
+        }
+      }
+
+      // Render helper to show an arbitrary set of students in the Student Info pane
+      function renderStudentsFromArray(students, contextLabel) {
+        const container = document.getElementById('students-list');
+        const details = document.getElementById('student-details');
+        container.innerHTML = '';
+        details.innerHTML = '<div class="muted">Click a student name to view skills and domain.</div>';
+        currentStudentsById = {};
+        (students || []).forEach(function(s){ currentStudentsById[String(s.id)] = s; });
+        if (!students || !students.length) {
+          container.innerHTML = '<div class="muted">No students found.</div>';
+          setShareActionsVisible(false);
+        } else {
+          const ul = document.createElement('ul');
+          students.forEach(function(s){
+            const li = document.createElement('li');
+            li.style.display = 'flex';
+            li.style.alignItems = 'center';
+            li.style.gap = '8px';
+            const btn = document.createElement('button');
+            const deptColors = { 'CSE':'#3b82f6','ECE':'#10b981','EEE':'#f59e0b','MECH':'#ef4444','CIVIL':'#8b5cf6' };
+            const color = deptColors[s.department] || '#6b7280';
+            btn.className = 'button secondary student-btn';
+            btn.type = 'button';
+            btn.style.borderLeft = `4px solid ${color}`;
+            btn.style.backgroundColor = `${color}15`;
+            btn.style.color = color;
+            btn.style.fontWeight = '600';
+            btn.style.fontSize = '15px';
+            btn.style.flex = '1';
+            btn.textContent = s.first_name + ' ' + s.last_name + ' (' + s.usn + ')';
+            btn.addEventListener('mouseenter', function(){ this.style.backgroundColor = `${color}25`; this.style.transform = 'translateX(2px)'; });
+            btn.addEventListener('mouseleave', function(){ this.style.backgroundColor = `${color}15`; this.style.transform = 'translateX(0)'; });
+            btn.addEventListener('click', function(){ showStudentDetails(s, btn); });
+            li.appendChild(btn);
+            const controls = document.createElement('div');
+            controls.style.display = 'flex';
+            controls.style.alignItems = 'center';
+            controls.style.gap = '8px';
+            controls.style.marginLeft = 'auto';
+            const sel = document.createElement('input');
+            sel.type = 'checkbox';
+            sel.className = 'student-select';
+            sel.setAttribute('data-id', String(s.id));
+            sel.setAttribute('data-email', s.email || '');
+            sel.setAttribute('data-name', (s.first_name || '') + ' ' + (s.last_name || ''));
+            sel.style.transform = 'scale(0.9)';
+            controls.appendChild(sel);
+            const del = document.createElement('button');
+            del.className = 'button secondary';
+            del.type = 'button';
+            del.style.background = '#ef4444';
+            del.style.color = 'white';
+            del.style.padding = '4px 8px';
+            del.style.fontSize = '12px';
+            del.textContent = 'Delete';
+            del.addEventListener('click', async function(){
+              if (!confirm('Delete this student?')) return;
+              try {
+                await deleteStudentRequest(s.id);
+                renderStudentsFromArray(students.filter(function(x){ return x.id !== s.id; }), contextLabel);
+                details.innerHTML = '<div class="muted">Student deleted.</div>';
+              } catch (err) {
+                alert('Failed to delete: ' + (err && err.message ? err.message : 'Unknown error'));
+              }
+            });
+            controls.appendChild(del);
+            li.appendChild(controls);
+            ul.appendChild(li);
+          });
+          container.appendChild(ul);
+          setShareActionsVisible(true);
+        }
+        // Update count badge and labels
+        const countBadge = document.getElementById('student-count-badge');
+        if (countBadge) {
+          const n = (students && students.length) || 0;
+          countBadge.textContent = n;
+          countBadge.style.display = 'inline-block';
+          countBadge.style.background = n > 0 ? '#10b981' : '#6b7280';
+        }
+        const deptBox = document.getElementById('selected-dept-box');
+        if (deptBox) deptBox.textContent = (contextLabel || 'Results');
+        const yearBox = document.getElementById('selected-year-box');
+        if (yearBox) { yearBox.textContent = ''; yearBox.style.display = 'none'; }
+      }
+
+      function showStudentDetails(s, selectedBtn) {
+        const details = document.getElementById('student-details');
+        const skills = Array.isArray(s.skills) ? s.skills : (s.skills || '').split(',').map(function(x){return x.trim();}).filter(Boolean);
+        
+        // Remove previous selection highlighting
+        document.querySelectorAll('.student-btn').forEach(function(btn) {
+          btn.style.border = btn.style.borderLeft; // Keep only left border
+          btn.style.boxShadow = 'none';
+        });
+        
+        // Highlight selected student
+        if (selectedBtn) {
+          selectedBtn.style.border = '2px solid #1f2937';
+          selectedBtn.style.boxShadow = '0 4px 8px rgba(0,0,0,0.1)';
+          selectedBtn.style.transform = 'scale(1.02)';
+        }
+        
+        details.innerHTML = '';
+        const info = document.createElement('div');
+        
+        // Department color coding
+        const deptColors = {
+          'CSE': '#3b82f6',    // Blue
+          'ECE': '#10b981',    // Green
+          'EEE': '#f59e0b',    // Amber
+          'MECH': '#ef4444',   // Red
+          'CIVIL': '#8b5cf6'   // Purple
+        };
+        const deptColor = deptColors[s.department] || '#6b7280';
+        
+        const resumeLink = s.resume_path ? ('<br><br><div class="badge" style="background: ' + deptColor + '; color: white;">Resume</div><div class="divider"></div><a href="' + s.resume_path + '" target="_blank" rel="noopener" style="color: ' + deptColor + ';">View PDF</a>') : '';
+        
+        info.innerHTML = '<div class="badge" style="background: ' + deptColor + '; color: white;">Name</div><div class="divider"></div>' + s.first_name + ' ' + s.last_name +
+          '<br><br><div class="badge" style="background: ' + deptColor + '; color: white;">USN</div><div class="divider"></div>' + s.usn +
+          '<br><br><div class="badge" style="background: ' + deptColor + '; color: white;">Gender</div><div class="divider"></div>' + s.gender +
+          '<br><br><div class="badge" style="background: ' + deptColor + '; color: white;">Email</div><div class="divider"></div>' + s.email +
+          '<br><br><div class="badge" style="background: ' + deptColor + '; color: white;">Phone</div><div class="divider"></div>' + s.phone +
+          '<br><br><div class="badge" style="background: ' + deptColor + '; color: white;">Department</div><div class="divider"></div>' + s.department +
+          '<br><br><div class="badge" style="background: ' + deptColor + '; color: white;">Batch</div><div class="divider"></div>' + s.batch +
+          '<br><br><div class="badge" style="background: ' + deptColor + '; color: white;">Domain</div><div class="divider"></div>' + (s.domain || '-') +
+          '<br><br><div class="badge" style="background: ' + deptColor + '; color: white;">Skills</div><div class="divider"></div>' + (skills.length ? skills.join(', ') : '-') +
+          resumeLink;
+        details.appendChild(info);
+      }
+
+      // Show student details into a specific container (used by candidate search)
+      function showStudentDetailsInto(containerId, s) {
+        const el = document.getElementById(containerId);
+        if (!el || !s) return;
+        const skills = Array.isArray(s.skills) ? s.skills : (s.skills || '').split(',').map(function(x){return x.trim();}).filter(Boolean);
+        const deptColors = { 'CSE': '#3b82f6', 'ECE': '#10b981', 'EEE': '#f59e0b', 'MECH': '#ef4444', 'CIVIL': '#8b5cf6' };
+        const deptColor = deptColors[s.department] || '#6b7280';
+        const resumeLink = s.resume_path ? ('<br><br><div class="badge" style="background: ' + deptColor + '; color: white;">Resume</div><div class="divider"></div><a href="' + s.resume_path + '" target="_blank" rel="noopener" style="color: ' + deptColor + ';">View PDF</a>') : '';
+        el.innerHTML = '<div class="badge" style="background: ' + deptColor + '; color: white;">Name</div><div class="divider"></div>' + s.first_name + ' ' + s.last_name +
+          '<br><br><div class="badge" style="background: ' + deptColor + '; color: white;">USN</div><div class="divider"></div>' + s.usn +
+          '<br><br><div class="badge" style="background: ' + deptColor + '; color: white;">Email</div><div class="divider"></div>' + s.email +
+          '<br><br><div class="badge" style="background: ' + deptColor + '; color: white;">Phone</div><div class="divider"></div>' + (s.phone || '-') +
+          '<br><br><div class="badge" style="background: ' + deptColor + '; color: white;">Department</div><div class="divider"></div>' + (s.department || '-') +
+          '<br><br><div class="badge" style="background: ' + deptColor + '; color: white;">Batch</div><div class="divider"></div>' + (s.batch || '-') +
+          '<br><br><div class="badge" style="background: ' + deptColor + '; color: white;">Domain</div><div class="divider"></div>' + (s.domain || '-') +
+          '<br><br><div class="badge" style="background: ' + deptColor + '; color: white;">Skills</div><div class="divider"></div>' + (skills.length ? skills.join(', ') : '-') +
+          resumeLink;
+      }
+
+      // Marks Calculation
+      const subjectsList = document.getElementById('subjects-list');
+      document.getElementById('add-subject').addEventListener('click', function() {
+        subjectsList.appendChild(createSubjectRow());
+      });
+
+      function createSubjectRow() {
+        const wrap = document.createElement('div');
+        wrap.className = 'subject-row';
+        wrap.innerHTML = '<div class="grid-2">\
+          <div class="field"><label>Subject Name</label><input class="sub-name" type="text" placeholder="Subject" required /></div>\
+          <div class="field"><label>Marks (0-100)</label><input class="sub-marks" type="number" min="0" max="100" placeholder="Marks" required /></div>\
+        </div>\
+        <div class="grid-2">\
+          <div class="field"><label>Credits</label><input class="sub-credits" type="number" min="1" max="6" placeholder="Credits" required /></div>\
+          <div class="field"><label>Grade (auto)</label><input class="sub-grade" type="text" placeholder="A/B/C..." disabled /></div>\
+        </div>';
+        return wrap;
+      }
+
+      document.getElementById('sgpa-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const rows = subjectsList.querySelectorAll('.subject-row');
+        let totalCredits = 0;
+        let totalGradePoints = 0;
+        rows.forEach(function(row) {
+          const name = row.querySelector('.sub-name').value.trim();
+          const marks = parseFloat(row.querySelector('.sub-marks').value);
+          const credits = parseFloat(row.querySelector('.sub-credits').value);
+          const gradeBox = row.querySelector('.sub-grade');
+          if (!name || isNaN(marks) || isNaN(credits)) return;
+          const gradePoint = mapMarksToGradePoint(marks);
+          gradeBox.value = mapGradePointToLetter(gradePoint);
+          totalCredits += credits;
+          totalGradePoints += gradePoint * credits;
+        });
+        if (!totalCredits) { document.getElementById('sgpa-result').innerHTML = '<div class="muted">Please enter valid subjects.</div>'; return; }
+        const sgpa = (totalGradePoints / totalCredits).toFixed(2);
+        document.getElementById('sgpa-result').innerHTML = '<div class="badge">SGPA</div><div class="divider"></div>' + sgpa;
+      });
+
+      function mapMarksToGradePoint(m) {
+        if (m >= 90) return 10;
+        if (m >= 80) return 9;
+        if (m >= 70) return 8;
+        if (m >= 60) return 7;
+        if (m >= 50) return 6;
+        if (m >= 45) return 5;
+        if (m >= 40) return 4;
+        return 0;
+      }
+      function mapGradePointToLetter(gp) {
+        if (gp >= 10) return 'O';
+        if (gp >= 9) return 'A+';
+        if (gp >= 8) return 'A';
+        if (gp >= 7) return 'B+';
+        if (gp >= 6) return 'B';
+        if (gp >= 5) return 'C';
+        if (gp >= 4) return 'P';
+        return 'F';
+      }
+
+      document.getElementById('save-sgpa').addEventListener('click', function() {
+        const valBox = document.getElementById('sgpa-result');
+        const match = valBox.textContent.match(/([0-9]+\.[0-9]{2}|[0-9]+)/);
+        if (!match) { alert('Calculate SGPA first.'); return; }
+        const sgpa = parseFloat(match[1]);
+        const arr = getCgpaSemesters();
+        arr.push(sgpa);
+        localStorage.setItem(CGPA_KEY, JSON.stringify(arr));
+        renderCgpa();
+      });
+
+      document.getElementById('clear-cgpa').addEventListener('click', function() {
+        localStorage.removeItem(CGPA_KEY);
+        renderCgpa();
+      });
+
+      function getCgpaSemesters() { try { return JSON.parse(localStorage.getItem(CGPA_KEY) || '[]'); } catch { return []; } }
+      function renderCgpa() {
+        const list = getCgpaSemesters();
+        const box = document.getElementById('cgpa-result');
+        if (!list.length) { box.innerHTML = '<div class="muted">No semesters saved.</div>'; return; }
+        const sum = list.reduce(function(a,b){ return a + b; }, 0);
+        const cgpa = (sum / list.length).toFixed(2);
+        const ul = document.createElement('ul');
+        list.forEach(function(v, i){ const li = document.createElement('li'); li.textContent = 'Sem ' + (i+1) + ': ' + v.toFixed(2); ul.appendChild(li); });
+        box.innerHTML = '';
+        box.appendChild(ul);
+        const total = document.createElement('div');
+        total.innerHTML = '<div class="badge">CGPA</div><div class="divider"></div>' + cgpa;
+        box.appendChild(total);
+      }
+
+      // Resume Analyzer (PDF upload -> extract text via PDF.js -> analyze)
+      document.getElementById('analyzer-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const domain = document.getElementById('resume-domain').value;
+        const fileInput = document.getElementById('resume-file');
+        const file = fileInput.files && fileInput.files[0];
+        if (!file) { alert('Please select a PDF resume.'); return; }
+        if (!/\.pdf$/i.test(file.name)) { alert('Please upload a .pdf file for analysis.'); return; }
+        const reader = new FileReader();
+        reader.onload = function() {
+          const arrayBuffer = reader.result;
+          extractTextFromPdf(arrayBuffer).then(function(text){
+            runResumeAnalysis(domain, text || '');
+          }).catch(function(){ alert('Failed to parse PDF.'); });
+        };
+        reader.onerror = function() { alert('Failed to read file.'); };
+        reader.readAsArrayBuffer(file);
+      });
+
+      function extractTextFromPdf(arrayBuffer) {
+        if (!window['pdfjsLib']) return Promise.reject(new Error('PDF.js not loaded'));
+        const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+        return loadingTask.promise.then(function(pdf){
+          const pagePromises = [];
+          for (let p = 1; p <= pdf.numPages; p++) {
+            pagePromises.push(pdf.getPage(p).then(function(page){
+              return page.getTextContent().then(function(tc){
+                return tc.items.map(function(it){ return it.str; }).join(' ');
+              });
+            }));
+          }
+          return Promise.all(pagePromises).then(function(pages){ return pages.join('\n'); });
+        });
+      }
+
+      function runResumeAnalysis(domain, text) {
+        const grammarOut = document.getElementById('analysis-grammar');
+        const missingOut = document.getElementById('analysis-missing');
+        const strengthsOut = document.getElementById('analysis-strengths');
+        grammarOut.innerHTML = '';
+        missingOut.innerHTML = '';
+        strengthsOut.innerHTML = '';
+        if (!domain || !text.trim()) {
+          grammarOut.innerHTML = '<li class="muted">Provide domain and resume text.</li>';
+          missingOut.innerHTML = '<li class="muted">Provide domain and resume text.</li>';
+          strengthsOut.innerHTML = '<li class="muted">Provide domain and resume text.</li>';
+          return;
+        }
+        const issues = [];
+        const sentences = text.split(/[.!?]+\s+/);
+        sentences.forEach(function(s){
+          const words = s.trim().split(/\s+/);
+          if (words.length > 30) issues.push('Very long sentence (' + words.length + ' words). Consider splitting.');
+          if (s.trim().match(/^[a-z]/)) issues.push('Sentence starts with lowercase. Capitalize sentence starts.');
+          if (/\bi\b/.test(s) && !/I/.test(s)) issues.push('Use capital "I" for first person pronoun.');
+          if (/(was|were)\s+\w+ed\b/i.test(s)) issues.push('Possible passive voice. Prefer active verbs.');
+        });
+        if (/\s{2,}/.test(text)) issues.push('Multiple consecutive spaces detected. Normalize spacing.');
+        if (!/\b(?:achieved|designed|built|led|improved|optimized|delivered|implemented|developed)\b/i.test(text)) {
+          issues.push('Use action verbs to describe impact (e.g., implemented, improved).');
+        }
+        if (!issues.length) issues.push('No major grammar/clarity issues detected.');
+        issues.forEach(function(i){ const li = document.createElement('li'); li.textContent = i; grammarOut.appendChild(li); });
+
+        const domainSkillsMap = {
+          web: ['html','css','javascript','react','node','rest','git'],
+          data: ['python','pandas','numpy','sql','statistics','ml','scikit-learn'],
+          embedded: ['c','c++','microcontroller','rtos','uart','spi','i2c'],
+          systems: ['linux','bash','docker','kubernetes','aws','ci/cd','networking']
+        };
+        const required = (domainSkillsMap[domain] || []);
+        const lowerText = text.toLowerCase();
+        const missing = required.filter(function(sk){ return !lowerText.includes(sk); });
+        if (!required.length) {
+          missingOut.innerHTML = '<li class="muted">No required skills for selected domain.</li>';
+        } else if (!missing.length) {
+          missingOut.innerHTML = '<li>Great! All core skills for this domain are mentioned.</li>';
+        } else {
+          missing.forEach(function(m){ const li = document.createElement('li'); li.textContent = m; missingOut.appendChild(li); });
+        }
+
+        const actionVerbs = ['achieved','designed','built','led','improved','optimized','delivered','implemented','developed','launched','reduced','increased'];
+        const strengths = {};
+        actionVerbs.forEach(function(v){
+          const re = new RegExp('\\b' + v + '\\b','gi');
+          const count = (text.match(re) || []).length;
+          if (count) strengths[v] = count;
+        });
+        const strengthKeys = Object.keys(strengths).sort(function(a,b){ return strengths[b]-strengths[a]; });
+        if (!strengthKeys.length) {
+          strengthsOut.innerHTML = '<li class="muted">Add measurable impact with action verbs (e.g., improved X% ...).</li>';
+        } else {
+          strengthKeys.forEach(function(k){ const li = document.createElement('li'); li.textContent = k + ' (' + strengths[k] + 'x)'; strengthsOut.appendChild(li); });
+        }
+      }
+
+      // Function to refresh current student view
+      function refreshCurrentStudentView() {
+        if (calendarState.selectedDept && calendarState.currentDate) {
+          const batch = calendarState.currentDate.getFullYear().toString();
+          renderStudents(calendarState.selectedDept, batch);
+        }
+      }
+
+      // Student registration save
+      document.getElementById('student-form').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const firstName = document.getElementById('student-firstname').value.trim();
+        const lastName = document.getElementById('student-lastname').value.trim();
+        const usn = document.getElementById('student-usn').value.trim();
+        const gender = document.getElementById('student-gender').value;
+        const email = document.getElementById('student-email').value.trim().toLowerCase();
+        const phone = document.getElementById('student-phone').value.trim();
+        const department = document.getElementById('student-dept').value;
+        const batch = document.getElementById('student-batch').value;
+        const skillsText = document.getElementById('student-skills').value.trim();
+        const domain = document.getElementById('student-domain').value.trim();
+        const fileInput = document.getElementById('student-resume');
+        
+        // Validation
+        if (!firstName || !lastName || !usn || !gender || !email || !phone || !department || !batch || !skillsText || !domain) {
+          alert('Please fill in all required fields');
+          return;
+        }
+        
+        // USN format validation (basic)
+        if (!/^[0-9]{1}[A-Z]{2}[0-9]{2}[A-Z]{2}[0-9]{3}$/i.test(usn)) {
+          alert('Please enter a valid USN format (e.g., 1SG20CS001)');
+          return;
+        }
+        
+        // Phone number validation (basic)
+        if (!/^[\+]?[0-9\s\-\(\)]{10,15}$/.test(phone)) {
+          alert('Please enter a valid phone number');
+          return;
+        }
+        
+        try {
+          // Build a FormData on the existing form element to include file
+          const formEl = e.target;
+          
+          // Set form field names for backend
+          document.getElementById('student-firstname').setAttribute('name','first_name');
+          document.getElementById('student-lastname').setAttribute('name','last_name');
+          document.getElementById('student-usn').setAttribute('name','usn');
+          document.getElementById('student-gender').setAttribute('name','gender');
+          document.getElementById('student-email').setAttribute('name','email');
+          document.getElementById('student-phone').setAttribute('name','phone');
+          document.getElementById('student-dept').setAttribute('name','department');
+          document.getElementById('student-batch').setAttribute('name','batch');
+          document.getElementById('student-domain').setAttribute('name','domain');
+          fileInput && fileInput.setAttribute('name','resume');
+          
+          // Set skills as hidden input
+          let hiddenSkills = formEl.querySelector('input[name="skills"]');
+          if (!hiddenSkills) {
+            hiddenSkills = document.createElement('input');
+            hiddenSkills.type = 'hidden';
+            hiddenSkills.name = 'skills';
+            formEl.appendChild(hiddenSkills);
+          }
+          hiddenSkills.value = skillsText;
+
+          await saveStudentForm(formEl);
+          
+          // Show success message with color coding
+          const successDiv = document.createElement('div');
+          successDiv.style.cssText = 'background: #10b981; color: white; padding: 12px; border-radius: 6px; margin: 10px 0; text-align: center; font-weight: 500;';
+          successDiv.innerHTML = '✅ Student registered successfully! <br><small>Student: ' + firstName + ' ' + lastName + ' (' + usn + ' - ' + department + ' - ' + batch + ')</small>';
+          
+          // Insert success message at the top of the form
+          const form = document.getElementById('student-form');
+          form.parentNode.insertBefore(successDiv, form);
+          
+          // Auto-remove success message after 5 seconds
+          setTimeout(() => {
+            if (successDiv.parentNode) {
+              successDiv.parentNode.removeChild(successDiv);
+            }
+          }, 5000);
+          
+          // Reset form
+          e.target.reset();
+          
+          // Refresh current student view if admin is viewing students
+          refreshCurrentStudentView();
+          
+        } catch (error) {
+          alert('Error registering student: ' + error.message);
+        }
+      });
+
+      // Logout
+      document.getElementById('logout').addEventListener('click', function() {
+        // no special admin state to clear now
+      });
+
+      // Admin panel sub-tabs (Student Info / Company Info / Candidate Search)
+      const btnStudentInfo = document.getElementById('btn-admin-students');
+      const btnCompanyInfo = document.getElementById('btn-admin-companies');
+      const viewStudentInfo = document.getElementById('admin-student-info');
+      const viewCompanyInfo = document.getElementById('admin-company-info');
+
+      function setAdminSubView(view) {
+        viewStudentInfo.classList.toggle('hidden', view !== 'students');
+        viewCompanyInfo.classList.toggle('hidden', view !== 'companies');
+        btnStudentInfo.classList.toggle('secondary', view !== 'students');
+        btnCompanyInfo.classList.toggle('secondary', view !== 'companies');
+      }
+      btnStudentInfo.addEventListener('click', function(){ setAdminSubView('students'); });
+      btnCompanyInfo.addEventListener('click', function(){ setAdminSubView('companies'); });
+      setAdminSubView('students');
+
+      // Company form handlers
+      document.getElementById('company-form').addEventListener('submit', async function(e){
+        e.preventDefault();
+        const payload = {
+          name: document.getElementById('comp-name').value.trim(),
+          role: document.getElementById('comp-role').value.trim(),
+          location: document.getElementById('comp-location').value.trim(),
+          package: document.getElementById('comp-package').value.trim(),
+          schedule_date: document.getElementById('comp-date').value,
+          eligibility: document.getElementById('comp-eligibility').value.trim(),
+          notes: document.getElementById('comp-notes').value.trim()
+        };
+        if (!payload.name) { alert('Company name is required'); return; }
+        try {
+          await createCompany(payload);
+          e.target.reset();
+          await renderCompanies();
+          alert('Company saved');
+        } catch (err) {
+          alert('Failed to save company: ' + (err && err.message ? err.message : 'Unknown error'));
+        }
+      });
+
+      async function renderCompanies() {
+        const listEl = document.getElementById('company-list');
+        listEl.innerHTML = '<div class="muted">Loading...</div>';
+        const companies = await getCompanies();
+        if (!companies.length) { listEl.innerHTML = '<div class="muted">No companies yet.</div>'; return; }
+        const ul = document.createElement('ul');
+        companies.forEach(function(c){
+          const li = document.createElement('li');
+          li.innerHTML = '<strong>' + (c.name || '-') + '</strong>' + (c.role ? (' — ' + c.role) : '') +
+            '<div class="muted">' +
+            [c.location || '-', c.package || '-', (c.schedule_date || '-'), (c.eligibility || '-')].join(' | ') +
+            '</div>' + (c.notes ? ('<div>' + c.notes + '</div>') : '');
+          ul.appendChild(li);
+        });
+        listEl.innerHTML = '';
+        listEl.appendChild(ul);
+      }
+
+      // Candidate search handlers
+      document.getElementById('search-form').addEventListener('submit', async function(e){
+        e.preventDefault();
+        const skills = document.getElementById('search-skills').value.trim();
+        const domain = document.getElementById('search-domain').value.trim();
+        if (!skills && !domain) { alert('Enter a skill or domain'); return; }
+        const resultsEl = document.getElementById('search-results');
+        resultsEl.innerHTML = '<div class="muted">Searching...</div>';
+        let rows = [];
+        try {
+          rows = await searchCandidates(skills, domain);
+        } catch (err) {
+          resultsEl.innerHTML = '<div class="muted">Search failed: ' + (err && err.message ? err.message : 'Unknown error') + '</div>';
+          return;
+        }
+        const detailsEl = document.getElementById('search-details');
+        if (!rows.length) {
+          resultsEl.innerHTML = '<div class="muted">No matching candidates.</div>';
+          detailsEl.innerHTML = '<div class="muted">—</div>';
+          return;
+        }
+        // Render interactive list in the search panel itself
+        const ul = document.createElement('ul');
+        rows.forEach(function(s){
+          const li = document.createElement('li');
+          const btn = document.createElement('button');
+          const deptColors = { 'CSE':'#3b82f6','ECE':'#10b981','EEE':'#f59e0b','MECH':'#ef4444','CIVIL':'#8b5cf6' };
+          const color = deptColors[s.department] || '#6b7280';
+          btn.className = 'button secondary';
+          btn.type = 'button';
+          btn.style.borderLeft = `4px solid ${color}`;
+          btn.style.backgroundColor = `${color}15`;
+          btn.style.color = color;
+          btn.style.fontWeight = '500';
+          btn.textContent = s.first_name + ' ' + s.last_name + ' (' + s.usn + ')';
+          btn.addEventListener('mouseenter', function(){ this.style.backgroundColor = `${color}25`; this.style.transform = 'translateX(2px)'; });
+          btn.addEventListener('mouseleave', function(){ this.style.backgroundColor = `${color}15`; this.style.transform = 'translateX(0)'; });
+          btn.addEventListener('click', function(){ showStudentDetailsInto('search-details', s); });
+          li.appendChild(btn);
+          ul.appendChild(li);
+        });
+        resultsEl.innerHTML = '';
+        resultsEl.appendChild(ul);
+        // Show first student's details by default
+        showStudentDetailsInto('search-details', rows[0]);
+      });
+
+      // Initial render
+      renderCompanies();
+
+      // Placement sub-view (Companies / Preparation)
+      const btnPlaceCompanies = document.getElementById('btn-place-companies');
+      const btnPlacePrep = document.getElementById('btn-place-prep');
+      const placementCompanies = document.getElementById('placement-companies');
+      const placementPreparation = document.getElementById('placement-preparation');
+
+      function setPlacementView(view) {
+        const isComp = view === 'companies';
+        placementCompanies.classList.toggle('hidden', !isComp);
+        placementPreparation.classList.toggle('hidden', isComp);
+        btnPlaceCompanies.classList.toggle('secondary', !isComp);
+        btnPlacePrep.classList.toggle('secondary', isComp);
+      }
+      btnPlaceCompanies.addEventListener('click', function(){ setPlacementView('companies'); });
+      btnPlacePrep.addEventListener('click', function(){ setPlacementView('prep'); });
+      setPlacementView('companies');
+
+      async function renderPlacementCompanies() {
+        const listEl = document.getElementById('placement-company-list');
+        listEl.innerHTML = '<div class="muted">Loading...</div>';
+        const companies = await getCompanies();
+        if (!companies.length) { listEl.innerHTML = '<div class="muted">No companies yet.</div>'; return; }
+        const ul = document.createElement('ul');
+        companies.forEach(function(c){
+          const li = document.createElement('li');
+          li.innerHTML = '<strong>' + (c.name || '-') + '</strong>' + (c.role ? (' — ' + c.role) : '') +
+            '<div class="muted">' +
+            [c.location || '-', c.package || '-', (c.schedule_date || '-'), (c.eligibility || '-')].join(' | ') +
+            '</div>' + (c.notes ? ('<div>' + c.notes + '</div>') : '');
+          ul.appendChild(li);
+        });
+        listEl.innerHTML = '';
+        listEl.appendChild(ul);
+      }
+
+      // Render placement companies on tab open
+      tabPlacement && tabPlacement.addEventListener('click', renderPlacementCompanies);
+      // Also render once on load to populate when user switches later
+      renderPlacementCompanies();
+
+      // Share toolbar: open default mail client with selected recipients
+      (function(){
+        var sendBtn = document.getElementById('send-mailto-btn');
+        if (!sendBtn) return;
+        sendBtn.addEventListener('click', function(){
+          var link = (document.getElementById('share-link-input').value || '').trim();
+          var boxes = document.querySelectorAll('#students-list input.student-select:checked');
+          var emails = Array.prototype.map.call(boxes, function(b){ return (b.getAttribute('data-email') || '').trim(); })
+            .filter(function(e){ return !!e; });
+          if (!emails.length) { alert('Select students with emails.'); return; }
+          var subject = 'Placement Information';
+          var body = link ? ('Please check the following link: ' + link) : '';
+          var mailto = 'mailto:?bcc=' + encodeURIComponent(Array.from(new Set(emails)).join(',')) +
+                       '&subject=' + encodeURIComponent(subject) +
+                       '&body=' + encodeURIComponent(body);
+          window.location.href = mailto;
+        });
+      })();
+
+      // email feature removed
+    })();
+  </script>
+</body>
+</html>

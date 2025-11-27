@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SGBIT Placement Portal - Sign up / Login</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <div class="brand">
+        <div class="brand-logo" aria-hidden="true"></div>
+        <div class="brand-title">SGBIT Placement Recruitment</div>
+      </div>
+      <div class="header-actions">
+        <a href="#" id="to-admin" style="display:none;"></a>
+      </div>
+    </header>
+
+    <div class="grid-2" style="grid-template-columns: 1fr; max-width: 560px; margin: 0 auto;">
+      <!-- Signup Section -->
+      <section class="card" aria-labelledby="signup-title" id="signup-section">
+        <h2 id="signup-title">Create Account</h2>
+        <p class="muted">Sign up to access the placement portal.</p>
+        <form class="form" id="signup-form">
+          <div class="field">
+            <label for="signup-name">Full Name</label>
+            <input id="signup-name" type="text" placeholder="Your full name" required />
+          </div>
+          <div class="field">
+            <label for="signup-email">Email</label>
+            <input id="signup-email" type="email" placeholder="you@example.com" required />
+          </div>
+          <div class="field">
+            <label for="signup-password">Password</label>
+            <input id="signup-password" type="password" placeholder="••••••••" required />
+          </div>
+          <div class="field">
+            <label for="signup-confirm-password">Confirm Password</label>
+            <input id="signup-confirm-password" type="password" placeholder="••••••••" required />
+          </div>
+          <div class="actions">
+            <button class="button" type="submit">Create Account</button>
+          </div>
+        </form>
+        
+        <!-- Success message with navigation -->
+        <div id="signup-success" class="hidden" style="margin-top: 20px; text-align: center;">
+          <div class="badge" style="background: #16a34a; color: white; margin-bottom: 15px;">✓ Account Created Successfully!</div>
+          <p class="muted">Your account has been created. You can now login.</p>
+          <div class="actions" style="justify-content: center; gap: 10px;">
+            <button class="button" id="go-to-login">Go to Login →</button>
+          </div>
+        </div>
+        
+        <!-- Navigation to Login -->
+        <div class="actions" style="justify-content: center; margin-top: 20px;">
+          <p class="muted">Already have an account?</p>
+          <button class="button secondary" id="show-login">Login Instead</button>
+        </div>
+      </section>
+
+      <!-- Login Section -->
+      <section class="card hidden" aria-labelledby="login-title" id="login-section">
+        <h2 id="login-title">Login</h2>
+        <p class="muted">Login to access the placement portal.</p>
+        <form class="form" id="login-form">
+          <div class="field">
+            <label for="login-email">Email</label>
+            <input id="login-email" type="email" placeholder="you@example.com" required />
+          </div>
+          <div class="field">
+            <label for="login-password">Password</label>
+            <input id="login-password" type="password" placeholder="••••••••" required />
+          </div>
+          <div class="actions">
+            <button class="button" type="submit">Login</button>
+          </div>
+        </form>
+        
+        <!-- Success message with navigation -->
+        <div id="login-success" class="hidden" style="margin-top: 20px; text-align: center;">
+          <div class="badge" style="background: #16a34a; color: white; margin-bottom: 15px;">✓ Login Successful!</div>
+          <p class="muted">Welcome back! You can now access the admin dashboard.</p>
+          <div class="actions" style="justify-content: center; gap: 10px;">
+            <button class="button" id="go-admin">Go to Admin Dashboard →</button>
+            <button class="button secondary" id="logout-btn">Logout</button>
+          </div>
+        </div>
+        
+        <!-- Navigation to Signup -->
+        <div class="actions" style="justify-content: center; margin-top: 20px;">
+          <p class="muted">Don't have an account?</p>
+          <button class="button secondary" id="show-signup">Create Account</button>
+        </div>
+      </section>
+    </div>
+
+    <footer class="footer">© 2025 Placement Portal. Demo only.</footer>
+  </div>
+
+  <script>
+    (function() {
+      const SESSION_KEY = 'pp_current_user_email';
+      // Always call the Node API on port 3000 to avoid parsing XAMPP HTML responses
+      const API_BASE_URL = 'http://localhost:3000/api';
+
+      function setSession(email) {
+        localStorage.setItem(SESSION_KEY, email);
+      }
+      function getSession() { return localStorage.getItem(SESSION_KEY); }
+
+      // API functions
+      async function apiRequest(endpoint, options = {}) {
+        try {
+          const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+            headers: {
+              'Content-Type': 'application/json',
+              ...options.headers
+            },
+            ...options
+          });
+          
+          if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'API request failed');
+          }
+          
+          return await response.json();
+        } catch (error) {
+          console.error('API Error:', error);
+          throw error;
+        }
+      }
+
+      async function registerUser(userData) {
+        try {
+          const data = await apiRequest('/auth/register', {
+            method: 'POST',
+            body: JSON.stringify(userData)
+          });
+          return data;
+        } catch (error) {
+          console.error('Failed to register user:', error);
+          throw error;
+        }
+      }
+
+      async function loginUser(credentials) {
+        try {
+          const data = await apiRequest('/auth/login', {
+            method: 'POST',
+            body: JSON.stringify(credentials)
+          });
+          return data;
+        } catch (error) {
+          console.error('Failed to login user:', error);
+          throw error;
+        }
+      }
+
+      const toAdmin = document.getElementById('to-admin');
+      if (getSession()) {
+        toAdmin.style.display = 'inline-flex';
+        toAdmin.href = 'admin.html';
+      }
+
+      // Initialize view - signup form is shown by default
+      const signupSection = document.getElementById('signup-section');
+      const loginSection = document.getElementById('login-section');
+
+      // Navigation between signup and login
+      document.getElementById('show-login').addEventListener('click', function() {
+        signupSection.classList.add('hidden');
+        loginSection.classList.remove('hidden');
+      });
+
+      document.getElementById('show-signup').addEventListener('click', function() {
+        loginSection.classList.add('hidden');
+        signupSection.classList.remove('hidden');
+      });
+
+      // Go to login after successful signup
+      document.getElementById('go-to-login').addEventListener('click', function() {
+        document.getElementById('signup-success').classList.add('hidden');
+        signupSection.classList.add('hidden');
+        loginSection.classList.remove('hidden');
+      });
+
+      // Signup form submission
+      document.getElementById('signup-form').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const name = document.getElementById('signup-name').value.trim();
+        const email = document.getElementById('signup-email').value.trim().toLowerCase();
+        const password = document.getElementById('signup-password').value;
+        const confirmPassword = document.getElementById('signup-confirm-password').value;
+        
+        if (!name || !email || !password || !confirmPassword) {
+          alert('Please fill in all fields');
+          return;
+        }
+        
+        if (password !== confirmPassword) {
+          alert('Passwords do not match');
+          return;
+        }
+        
+        if (password.length < 6) {
+          alert('Password must be at least 6 characters long');
+          return;
+        }
+        
+        try {
+          const response = await registerUser({ name, email, password });
+          document.getElementById('signup-form').classList.add('hidden');
+          document.getElementById('signup-success').classList.remove('hidden');
+        } catch (error) {
+          alert('Registration failed: ' + error.message);
+        }
+      });
+
+      // Login form submission
+      document.getElementById('login-form').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const email = document.getElementById('login-email').value.trim().toLowerCase();
+        const password = document.getElementById('login-password').value;
+        
+        if (!email || !password) {
+          alert('Please fill in all fields');
+          return;
+        }
+        
+        try {
+          const response = await loginUser({ email, password });
+          setSession(email);
+          window.location.href = 'admin.html';
+        } catch (error) {
+          alert('Invalid email or password');
+        }
+      });
+    })();
+  </script>
+</body>
+</html>
