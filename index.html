@@ -103,8 +103,10 @@
   <script>
     (function() {
       const SESSION_KEY = 'pp_current_user_email';
-      // Always call the Node API on port 3000 to avoid parsing XAMPP HTML responses
-      const API_BASE_URL = 'http://localhost:3000/api';
+      // Auto-detect API URL: use current origin if on HTTP/HTTPS, otherwise fallback to localhost
+      const _origin = window.location.origin;
+      const _isHttp = _origin.startsWith('http://') || _origin.startsWith('https://');
+      const API_BASE_URL = (_isHttp ? _origin : 'http://localhost:3000') + '/api';
 
       function setSession(email) {
         localStorage.setItem(SESSION_KEY, email);
