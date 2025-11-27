@@ -1,0 +1,8 @@
+node_modules/
+placement_portal.db
+.env
+.DS_Store
+*.log
+uploads/resumes/*.pdf
+!uploads/resumes/.gitkeep
+
